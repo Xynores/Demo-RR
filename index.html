@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHICKEN-FLOW - POS & KDS Prototype</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background-color: #d32f2f;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 { font-size: 24px; }
+        header p { font-size: 14px; opacity: 0.9; }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Kolom Kiri: Sisi Kasir */
+        .cashier-side {
+            flex: 1;
+            padding: 20px;
+            border-right: 2px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Kolom Kanan: Sisi Dapur */
+        .kitchen-side {
+            flex: 1;
+            padding: 20px;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h2 {
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #d32f2f;
+            color: #333;
+        }
+        
+        /* Menu Grid */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .menu-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .menu-card:hover {
+            border-color: #d32f2f;
+            transform: translateY(-2px);
+        }
+        .menu-card h4 { margin-bottom: 5px; }
+        .menu-card p { color: #e65100; font-weight: bold; }
+        
+        /* Ringkasan Order Kasir */
+        .order-summary {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .order-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            list-style: none;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .total-box {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #333;
+        }
+        
+        /* Tombol Transaksi */
+        .btn-pay {
+            background-color: #2e7d32;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-pay:hover { background-color: #1b5e20; }
+        
+        /* Antrean Layran Dapur (KDS) */
+        .kds-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .kds-card {
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            background-color: #fffde7;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .kds-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            border-bottom: 1px solid #ff9800;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            color: #e65100;
+        }
+        .kds-items {
+            flex: 1;
+            list-style: none;
+            font-size: 15px;
+        }
+        .btn-done {
+            background-color: #d32f2f;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-done:hover { background-color: #b71c1c; }
+        
+        /* Popup QRIS Simulasi */
+        .qris-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+        }
+        .qris-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 300px;
+        }
+        .qris-img {
+            width: 200px;
+            height: 200px;
+            margin: 15px auto;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CHICKEN-FLOW 🚀</h1>
+        <p>Prototipe Integrasi POS & Kitchen Display System - Rocket Chicken Petung (2IF01)</p>
+    </header>
+
+    <div class="container">
+        
+        <!-- SISI KASIR -->
+        <div class="cashier-side">
+            <h2>🛒 Menu Kasir Front-Line</h2>
+            <div class="menu-grid">
+                <div class="menu-card" onclick="addToCart('Paket Rocket 1 (Ayam + Nasi)', 15000)">
+                    <h4>Paket Rocket 1</h4>
+                    <p>Rp 15.000</p>
+                </div>
+                <div class="menu-card" onclick="addToCart('Paket Rocket 2 (Ayam + Nasi + Minum)', 19000)">
+                    <h4>Paket Rocket 2</h4>
+                    <p>Rp 19000</p>
+                </div>
+                <div class="menu-card" onclick="addToCart('Chicken Burger', 13000)">
+                    <h4>Chicken Burger</h4>
+                    <p>Rp 13.000</p>
+                </div>
+                <div class="menu-card" onclick="addToCart('French Fries', 10000)">
+                    <h4>French Fries</h4>
+                    <p>Rp 10.000</p>
+                </div>
+            </div>
+            
+            <div class="order-summary">
+                <h3>Struk Pesanan Baru</h3>
+                <hr style="margin: 10px 0;">
+                <ul id="order-list" class="order-list">
+                    <!-- Item belanja masuk disini -->
+                </ul>
+                <div class="total-box">
+                    <span>Total:</span>
+                    <span id="total-price">Rp 0</span>
+                </div>
+                <button class="btn-pay" onclick="openQrisModal()">Bayar & Kirim ke Dapur (QRIS)</button>
+            </div>
+        </div>
+        
+        <!-- SISI DAPUR -->
+        <div class="kitchen-side">
+            <h2>🍳 Layar Dapur (Kitchen Display System)</h2>
+            <div id="kds-grid" class="kds-grid">
+                <!-- Pesanan masuk dari kasir muncul disini -->
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- MODAL SIMULASI QRIS AUTOMATED RECONCILIATION -->
+    <div id="qris-modal" class="qris-modal">
+        <div class="qris-content">
+            <h3>Simulasi Pembayaran QRIS</h3>
+            <p>Fitur Verifikasi Otomatis Finansial</p>
+            <div class="qris-img">
+                <!-- Simulasi Gambar QR Dinamis -->
+                <img src="gg.jpeg" alt="QRIS Toko" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <p style="font-weight: bold; color: #2e7d32; margin-bottom: 15px;">Status: Menunggu Dana Masuk...</p>
+            <button class="btn-pay" onclick="processPaymentSuccess()">Simulasikan Pembayaran Sukses</button>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        let total = 0;
+        let orderCounter = 101;
+
+        function addToCart(name, price) {
+            cart.push({ name, price });
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const listEl = document.getElementById('order-list');
+            const totalEl = document.getElementById('total-price');
+            listEl.innerHTML = '';
+            total = 0;
+
+            cart.forEach(item => {
+                total += item.price;
+                listEl.innerHTML += `<li class="order-item"><span>${item.name}</span><span>Rp ${item.price.toLocaleString('id-ID')}</span></li>`;
+            });
+            totalEl.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        function openQrisModal() {
+            if (cart.length === 0) {
+                alert("Keranjang masih kosong!");
+                return;
+            }
+            document.getElementById('qris-modal').style.display = 'flex';
+        }
+
+        function processPaymentSuccess() {
+            document.getElementById('qris-modal').style.display = 'none';
+            sendToKitchen();
+            // Reset Kasir setelah transaksi berhasil dikirim ke KDS
+            cart = [];
+            updateCartUI();
+            alert("Rekonsiliasi QRIS Sukses! Dana terverifikasi masuk ke rekening owner. Pesanan dikirim ke dapur.");
+        }
+
+        function sendToKitchen() {
+            const kdsGrid = document.getElementById('kds-grid');
+            let itemTextList = cart.map(item => `<li>• ${item.name}</li>`).join('');
+            
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            const orderCardHtml = `
+                <div class="kds-card" id="order-${orderCounter}">
+                    <div class="kds-header">
+                        <span>#${orderCounter}</span>
+                        <span>⏱️ ${timeStr}</span>
+                    </div>
+                    <ul class="kds-items">
+                        ${itemTextList}
+                    </ul>
+                    <button class="btn-done" onclick="completeOrder(${orderCounter})">Selesai Masak</button>
+                </div>
+            `;
+            
+            kdsGrid.innerHTML += orderCardHtml;
+            orderCounter++;
+        }
+
+        function completeOrder(id) {
+            const card = document.getElementById(`order-${id}`);
+            if(card) {
+                card.remove();
+            }
+        }
+    </script>
+</body>
+</html>
